@@ -7,7 +7,7 @@ from parameterized import parameterized
 from typing import Union, Dict, Tuple
 from unittest.mock import Mock, patch
 
-from utils import access_nested_map, get_json
+from utils import access_nested_map, get_json, memoize
 
 
 class TestAccessNestedMap(unittest.TestCase):
@@ -67,3 +67,29 @@ class TestGetJson(unittest.TestCase):
         with patch("requests.get", return_value=Mock(**attr)) as reqget:
             self.assertEqual(get_json(test_url), test_payload)
             reqget.assert_called_once_with(test_url)
+
+
+class TestMemoize(unittest.TestCase):
+    """
+    Test the memoize function
+    """
+    def test_memoize(self) -> None:
+        """
+        Test memoize's expected output
+        """
+        class TestClass:
+            def a_method(self):
+                return 42
+
+            @memoize
+            def a_property(self):
+                return self.a_method()
+        with patch.object(
+            TestClass,
+            "a_method",
+            return_value=lambda: 42,
+        ) as mem:
+            test_class = TestClass
+            self.assertEqual(test_class.a_property(), 42)
+            self.assertEqual(test_class.a_property(), 42)
+            mem.assert_called_once()
