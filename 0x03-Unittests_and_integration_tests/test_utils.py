@@ -42,4 +42,5 @@ class TestAccessNestedMap(unittest.TestCase):
         """
         Test access_nested_map's exception
         """
-        self.assertRaises(exception): access_nested_map(nested_map, path)
+        with self.assertRaises(exception):
+            access_nested_map(nested_map, path)
