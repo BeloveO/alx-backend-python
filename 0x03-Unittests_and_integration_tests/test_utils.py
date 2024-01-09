@@ -89,7 +89,7 @@ class TestMemoize(unittest.TestCase):
             "a_method",
             return_value=lambda: 42,
         ) as mem:
-            test_class = TestClass
+            test_class = TestClass()
             self.assertEqual(test_class.a_property(), 42)
             self.assertEqual(test_class.a_property(), 42)
             mem.assert_called_once()
