@@ -1,9 +1,28 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from rest_framework import viewsets
+from rest_framework import viewsets, filters, status, generics
 from rest_framework.response import Response
 from .models import User, Conversation, Message
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
+
+
+# Filters for searching and ordering
+class ConversationFilter(filters.FilterSet):
+    class Meta:
+        model = Conversation
+        fields = {
+            'participants_id__username': ['exact', 'icontains'],
+            'created_at': ['exact', 'lt', 'gt'],
+        }
+
+class MessageFilter(filters.FilterSet):
+    class Meta:
+        model = Message
+        fields = {
+            'conversation_id__conversation_id': ['exact'],
+            'sender_id__username': ['exact', 'icontains'],
+            'sent_at': ['exact', 'lt', 'gt'],
+        }
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
@@ -12,14 +31,40 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'delete']
     lookup_field = 'user_id'
     lookup_value_regex = '[0-9]+'
+    
+    # Get serializer class for user
+    def get_serializer_class(self):
+        return UserSerializer
+    
+    # Return all users
     def get_queryset(self):
         return User.objects.all()
-    def perform_create(self, serializer):
-        serializer.save()
-    def perform_update(self, serializer):
-        serializer.save()
-    def perform_destroy(self, instance):
-        instance.delete()
+    
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset)
+    
+    # Implement the endpoints to create a new user
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=201)
+    
+    # Implement the endpoints to update a user
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+    
+    # Implement the endpoints to delete a user
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=204)
+
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
@@ -27,19 +72,18 @@ class ConversationViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'delete']
     lookup_field = 'conversation_id'
     lookup_value_regex = '[0-9]+'
-
+    
+    # Get serializer class for conversation
     def get_serializer_class(self):
         return ConversationSerializer
     
-    # Get queryset for conversation where current user is a participant
+    # Return only conversations where the user is a participant
     def get_queryset(self):
         user = self.request.user
         return Conversation.objects.filter(participants=user)
-    # Get the details of a specific conversation
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+    
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset)
     
     # Implement the endpoints to create a new conversation
     def create(self, request, *args, **kwargs):
@@ -63,6 +107,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=204)
 
+
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
@@ -78,7 +123,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         return Message.objects.filter(conversation__participants=user)
-    
+
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset)
+
     # Implement the endpoints to create a new message
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
