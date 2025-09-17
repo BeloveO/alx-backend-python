@@ -44,10 +44,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
     lookup_field = 'conversation_id'
     lookup_value_regex = '[0-9]+'
     
-    # Get serializer class for conversation
-    def get_serializer_class(self):
-        return ConversationSerializer
-    
     # Return only conversations where the user is a participant
     def get_queryset(self):
         user = self.request.user
@@ -58,14 +54,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
-    
-# Implement the endpoints to create a new conversation
-@action(detail=False, methods=['post'])
-def create_conversation(self, request):
-    serializer = self.get_serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    self.perform_create(serializer)
-    return Response(serializer.data, status=201)
 
 
 class MessageViewSet(viewsets.ModelViewSet):
@@ -75,10 +63,6 @@ class MessageViewSet(viewsets.ModelViewSet):
     lookup_field = 'message_id'
     lookup_value_regex = '[0-9]+'
     
-    # Get serializer class for message
-    def get_serializer_class(self):
-        return MessageSerializer
-    
     # Return only messages in conversations where the user is a participant
     def get_queryset(self):
         user = self.request.user
@@ -87,10 +71,23 @@ class MessageViewSet(viewsets.ModelViewSet):
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
 
-    # Implement the endpoints to create a new message
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+# Implement the endpoints to create a new conversation and send messages to an existing one
+@action(detail=False, methods=['post'])
+def create_conversation(self, request):
+    serializer = ConversationSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(creator=request.user)
         return Response(serializer.data, status=201)
-    
+    return Response(serializer.errors, status=400)
+
+# Optionally, add logic to notify participants of the new message
+@action(detail=True, methods=['post'])
+def send_message(self, request, conversation_id=None):
+    serializer = MessageSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(sender=request.user, conversation_id=conversation_id)
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=400)
