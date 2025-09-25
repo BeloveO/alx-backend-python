@@ -4,6 +4,7 @@ from .models import User, Conversation, Message
 # Serializers for the User, Conversation, and Message models
 
 class UserSerializer(serializers.ModelSerializer):
+    user_id = serializers.ReadOnlyField(source='id')
     is_online = serializers.BooleanField(default=False)
     class Meta:
         model = User

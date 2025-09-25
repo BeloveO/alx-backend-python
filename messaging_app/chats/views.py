@@ -1,7 +1,7 @@
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
-from rest_framework import filters as drf_filters
-from django_filters import rest_framework as filters, DjangoFilterBackend
+from django_filters import rest_framework as filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import User, Conversation, Message
@@ -57,22 +57,22 @@ class MessageFilter(filters.FilterSet):
 
     class Meta:
         model = Message
-        fields = ['conversation', 'sender_username', 'sent_after', 'sent_before', 'unread_only']
+        fields = ['sender_username', 'sent_after', 'sent_before', 'unread_only']
 
 
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     http_method_names = ['get', 'head', 'options']
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [filters.CharFilter, filters.OrderingFilter]
     search_fields = ['username', 'email']
     ordering_fields = ['username', 'date_joined']
     ordering = ['username']
 
     # Get serializer class for user
-    def get_queryset(slf):
+    def get_queryset(self):
         return User.objects.all().only(
-                'id', 'username', 'email', 'first_name', 'last_name', 'date_joined'
+                'id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'role'
             )
 
 

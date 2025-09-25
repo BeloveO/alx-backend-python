@@ -1,6 +1,10 @@
 from django.urls import path, include
 from rest_framework import routers
 from rest_framework_nested.routers import NestedDefaultRouter
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 from .views import UserViewSet, ConversationViewSet, MessageViewSet
 
 router = routers.DefaultRouter()
@@ -14,4 +18,6 @@ conversation_router.register(r'messages', MessageViewSet, basename='conversation
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(conversation_router.urls)),
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
