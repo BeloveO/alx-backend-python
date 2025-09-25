@@ -5,6 +5,7 @@ from django_filters import rest_framework as filters, DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import User, Conversation, Message
+from .pagination import CustomPagination
 from .permissions import IsParticipantOfConversation
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
 
@@ -123,6 +124,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     lookup_field = 'message_id'
     lookup_value_regex = '[0-9]+'
     filterset_class = MessageFilter
+    pagination_class = CustomPagination
     permission_classes = [IsParticipantOfConversation]
     
     # Return only messages in conversations where the user is a participant
