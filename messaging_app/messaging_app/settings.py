@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework_nested',
     'django_filters',
     'chats',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
