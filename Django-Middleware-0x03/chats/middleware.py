@@ -74,3 +74,18 @@ class OffensiveLanguageMiddleware:
         if x_forwarded_for:
             return x_forwarded_for.split(",")[0]
         return request.META.get("REMOTE_ADDR")
+    
+class RolepermissionMiddleware:
+    # checks the user’s role i.e admin, before allowing access to specific actions
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.protected_paths = ['/admin/', '/moderate/']  # Example protected paths
+
+    def __call__(self, request):
+        # If the user is not admin or moderator, it should return error 403
+        is_admin = request.user.is_authenticated and request.user.role in ['admin', 'moderator']
+        if any(request.path.startswith(path) for path in self.protected_paths):
+            if not is_admin:
+                return JsonResponse({"error": "You do not have permission to access this resource."}, status=403)
+        response = self.get_response(request)
+        return response
