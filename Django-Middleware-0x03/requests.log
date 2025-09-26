@@ -1,0 +1,40 @@
+INFO:chats.middleware:2025-09-26 09:43:44.297662 - User: Anonymous - Path: /
+WARNING:django.request:Not Found: /
+INFO:chats.middleware:2025-09-26 09:44:48.277199 - User: Anonymous - Path: /
+WARNING:django.request:Not Found: /
+INFO:chats.middleware:2025-09-26 09:44:49.259416 - User: Anonymous - Path: /api/token/
+WARNING:django.request:Method Not Allowed: /api/token/
+INFO:chats.middleware:2025-09-26 09:44:52.261751 - User: Anonymous - Path: /api/
+WARNING:django.request:Forbidden: /api/
+INFO:chats.middleware:2025-09-26 09:45:01.022552 - User: Anonymous - Path: /api/token/
+WARNING:django.request:Method Not Allowed: /api/token/
+INFO:chats.middleware:2025-09-26 09:45:03.989401 - User: Anonymous - Path: /api-auth/
+WARNING:django.request:Not Found: /api-auth/
+INFO:chats.middleware:2025-09-26 09:45:08.929023 - User: Anonymous - Path: /api/token/
+WARNING:django.request:Method Not Allowed: /api/token/
+INFO:chats.middleware:2025-09-26 09:46:25.603602 - User: Anonymous - Path: /api/books/
+WARNING:django.request:Not Found: /api/books/
+INFO:chats.middleware:2025-09-26 09:46:26.250667 - User: Anonymous - Path: /
+WARNING:django.request:Not Found: /
+INFO:chats.middleware:2025-09-26 09:46:32.313123 - User: Anonymous - Path: /chats
+WARNING:django.request:Not Found: /chats
+INFO:chats.middleware:2025-09-26 09:48:55.109363 - User: Anonymous - Path: /
+WARNING:django.request:Not Found: /
+INFO:chats.middleware:2025-09-26 09:48:55.791425 - User: Anonymous - Path: /api/books/
+WARNING:django.request:Not Found: /api/books/
+INFO:chats.middleware:2025-09-26 09:48:58.652688 - User: Anonymous - Path: /admin
+INFO:chats.middleware:2025-09-26 09:48:58.666760 - User: Anonymous - Path: /admin/
+INFO:chats.middleware:2025-09-26 09:48:58.679327 - User: Anonymous - Path: /admin/login/
+INFO:chats.middleware:2025-09-26 09:49:33.799679 - User: Anonymous - Path: /admin/login/
+INFO:chats.middleware:2025-09-26 09:50:35.459748 - User: Anonymous - Path: /admin/login/
+INFO:chats.middleware:2025-09-26 09:50:38.046072 - User: Anonymous - Path: /
+WARNING:django.request:Not Found: /
+INFO:chats.middleware:2025-09-26 09:50:38.922174 - User: Anonymous - Path: /admin/login/
+INFO:chats.middleware:2025-09-26 09:50:39.380028 - User: Anonymous - Path: /api/books/
+WARNING:django.request:Not Found: /api/books/
+INFO:chats.middleware:2025-09-26 09:50:43.825497 - User: Anonymous - Path: /api/conversations/
+WARNING:django.request:Forbidden: /api/conversations/
+INFO:chats.middleware:2025-09-26 09:50:51.988011 - User: Anonymous - Path: /api/books/
+WARNING:django.request:Not Found: /api/books/
+INFO:chats.middleware:2025-09-26 09:50:55.053720 - User: Anonymous - Path: /api/messages/
+WARNING:django.request:Forbidden: /api/messages/
