@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Conversation, Message
+from .models import User, Conversation, Message, Notification, MessageHistory
 
 # Serializers for the User, Conversation, and Message models
 
@@ -50,3 +50,25 @@ class MessageSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Message body cannot be empty.")
         return value
+    
+class NotificationSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    message = serializers.CharField(source='message_body')
+
+    class Meta:
+        model = Notification
+        fields = ['notification_id', 'user_id', 'message', 'is_read', 'created_at']
+
+    def validate_message(self, value):
+        if not value:
+            raise serializers.ValidationError("Notification message cannot be empty.")
+        return value
+    
+class MessageHistorySerializer(serializers.ModelSerializer):
+    message = serializers.PrimaryKeyRelatedField(read_only=True)
+    edited_by = UserSerializer(read_only=True)
+
+    class Meta:
+        model = MessageHistory
+        fields = ['history_id', 'message', 'old_content', 'edited_by', 'edited_at']
+        read_only_fields = ['history_id', 'message', 'edited_at']

@@ -4,10 +4,10 @@ from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import User, Conversation, Message, Notification
+from .models import User, Conversation, Message, Notification, MessageHistory
 from .pagination import CustomPagination
 from .permissions import IsParticipantOfConversation
-from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
+from .serializers import UserSerializer, ConversationSerializer, MessageSerializer, NotificationSerializer, MessageHistorySerializer
 
 
 # Filters for searching and ordering
@@ -159,11 +159,74 @@ class MessageViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    http_method_names = ['get', 'post']
+    lookup_field = 'notification_id'
+    lookup_value_regex = '[0-9]+'
+    pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated]
 
-@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsParticipantOfConversation])
-def user_notification(self, request, pk=None):
-    user = self.get_object()
-    notifications = Notification.objects.filter(user=user, is_read=False)
-    # Mark notifications as read
-    notifications.update(is_read=True)
-    return Response({"message": f"{notifications.count()} notifications marked as read."}, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        user = self.request.user
+        return Notification.objects.filter(user=user)
+
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset)
+
+    # Mark notifications as read for the user
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def mark_all_as_read(self, request):
+        user = request.user
+        notifications = Notification.objects.filter(user=user, is_read=False)
+        notifications.update(is_read=True)
+        return Response({"message": f"{notifications.count()} notifications marked as read."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsParticipantOfConversation])
+    def user_notification(self, request, pk=None):
+        user = self.get_object()
+        notifications = Notification.objects.filter(user=user, is_read=False)
+        # Mark notifications as read
+        notifications.update(is_read=True)
+        return Response({"message": f"{notifications.count()} notifications marked as read."}, status=status.HTTP_200_OK)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsParticipantOfConversation])
+    def edit_message(self, request, message_id=None):
+        try:
+            message = Message.objects.get(message_id=message_id)
+            if request.user != message.sender:
+                return Response({"error": "You can only edit your own messages."}, status=403)
+            new_content = request.data.get('content')
+            if not new_content:
+                return Response({"error": "Content cannot be empty."}, status=400)
+            # Save old content to history
+            MessageHistory.objects.create(
+                message=message,
+                old_content=message.content,
+                edited_by=request.user
+            )
+            # Update message content
+            message.content = new_content
+            message.edited = True
+            message.edited_by = request.user
+            message.save()
+            return Response({"message": "Message edited successfully."}, status=200)
+        except Message.DoesNotExist:
+            return Response({"error": "Message not found."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+        
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsParticipantOfConversation])
+    def message_history(self, request, message_id=None):
+        try:
+            message = Message.objects.get(message_id=message_id)
+            history = MessageHistory.objects.filter(message=message).order_by('-edited_at')
+            serializer = MessageHistorySerializer(history, many=True)
+            return Response(serializer.data, status=200)
+        except Message.DoesNotExist:
+            return Response({"error": "Message not found."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
