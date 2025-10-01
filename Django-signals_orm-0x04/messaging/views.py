@@ -230,3 +230,22 @@ class NotificationViewSet(viewsets.ModelViewSet):
             return Response({"error": "Message not found."}, status=404)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+        
+
+# Delete user view for deleting user accounts
+class UserDeleteViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    http_method_names = ['delete']
+    lookup_field = 'id'
+    lookup_value_regex = '[0-9]+'
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return User.objects.filter(id=user.id)
+
+    def delete_user(self, request, pk=None):
+        user = self.get_object()
+        user.delete()
+        return Response({"message": "User account deleted successfully."}, status=status.HTTP_200_OK)

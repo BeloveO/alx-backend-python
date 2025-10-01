@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 from .models import Message, MessageHistory, Notification
 import logging
@@ -37,3 +37,10 @@ def log_message_edit(sender, instance, **kwargs):
             instance.edited = True
             instance.edited_by = instance.sender
             logger.info(f"Message {instance.message_id} edited. Old content logged.")
+
+# delete user and all related messages and conversations
+def delete_user_related_data(user):
+    messages_deleted, _ = Message.objects.filter(sender=user).delete()
+    conversations_deleted, _ = user.created_conversations.all().delete()
+    notifications_deleted, _ = Notification.objects.filter(user=user).delete()
+    logger.info(f"Deleted {messages_deleted} messages, {conversations_deleted} conversations, and {notifications_deleted} notifications for user {user.username}")

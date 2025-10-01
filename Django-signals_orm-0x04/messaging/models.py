@@ -45,6 +45,7 @@ class Message(models.Model):
     content = models.TextField()
     edited = models.BooleanField(default=False)
     edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='edited_messages')
+    parent_message = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     timestamp = models.DateTimeField(default=models.functions.Now())
 
     class Meta:
