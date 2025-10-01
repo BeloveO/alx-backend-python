@@ -103,7 +103,7 @@ def delete_user(self, request, pk=None):
 @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
 def get_unread_messages(self, request):
     user = request.user
-    unread_messages = Message.unread.unread_messages(user)
+    unread_messages = Message.unread.unread_for_user(user)
     serializer = MessageSerializer(unread_messages, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
