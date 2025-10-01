@@ -4,7 +4,7 @@ from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import User, Conversation, Message, Notification
+from .models import User, Conversation, Message
 from .pagination import CustomPagination
 from .permissions import IsParticipantOfConversation
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
@@ -158,12 +158,3 @@ class MessageViewSet(viewsets.ModelViewSet):
             serializer.save(sender=request.user, conversation_id=conversation_id)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
-    
-
-@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsParticipantOfConversation])
-def user_notification(self, request, pk=None):
-    user = self.get_object()
-    notifications = Notification.objects.filter(user=user, is_read=False)
-    # Mark notifications as read
-    notifications.update(is_read=True)
-    return Response({"message": f"{notifications.count()} notifications marked as read."}, status=status.HTTP_200_OK)

@@ -49,23 +49,3 @@ class Message(models.Model):
         ordering = ['-timestamp']
     def __str__(self):
         return f"Message from {self.sender.username} at {self.timestamp}"
-    
-class Notification(models.Model):
-    # to store notifications, linking it to the User and Message models
-    NOTIFICATION_TYPES = [
-        ('message', 'Message'),
-        ('mention', 'Mention'),
-        ('other', 'Other'),
-    ]
-    notification_id = models.AutoField(primary_key=True, unique=True)
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='message')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='notifications')
-    is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(default=models.functions.Now())
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Notification for {self.user.username} about message {self.message.message_id}"
