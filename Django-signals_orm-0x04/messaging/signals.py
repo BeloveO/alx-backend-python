@@ -19,8 +19,15 @@ def create_notification(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Message)
 def handle_new_messages(sender, instance, created, **kwargs):
     if created:
-        create_notification(instance)
-        logger.info(f"Handled new message from {instance.sender.username} to {instance.receiver.username}")
+        # If the message is a reply, ensure the parent message is marked as not a thread starter
+        if instance.parent_message:
+            instance.parent_message.is_thread_starter = False
+            instance.parent_message.save(update_fields=['is_thread_starter'])
+            logger.info(f"Message {instance.parent_message.message_id} marked as not a thread starter due to reply.")
+        else:
+            instance.is_thread_starter = True
+            instance.save(update_fields=['is_thread_starter'])
+            logger.info(f"Message {instance.message_id} is a thread starter.")
 
 # Log the old content of a message into a separate MessageHistory model before it’s updated.
 @receiver(pre_save, sender=Message)
@@ -39,6 +46,9 @@ def log_message_edit(sender, instance, **kwargs):
             logger.info(f"Message {instance.message_id} edited. Old content logged.")
 
 # delete user and all related messages and conversations
+@receiver(post_delete, sender=Message)
+def log_message_deletion(sender, instance, **kwargs):
+    logger.info(f"Message {instance.message_id} deleted.")
 def delete_user_related_data(user):
     messages_deleted, _ = Message.objects.filter(sender=user).delete()
     conversations_deleted, _ = user.created_conversations.all().delete()

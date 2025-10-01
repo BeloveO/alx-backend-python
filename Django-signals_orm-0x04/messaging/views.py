@@ -2,6 +2,8 @@ from rest_framework.decorators import action
 from rest_framework import viewsets, status
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import User, Conversation, Message, Notification, MessageHistory
@@ -63,7 +65,7 @@ class MessageFilter(filters.FilterSet):
 # Create your views here.
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
-    http_method_names = ['get', 'head', 'options']
+    http_method_names = ['get', 'head', 'options', 'post', 'delete']
     filter_backends = [filters.CharFilter, filters.OrderingFilter]
     search_fields = ['username', 'email']
     ordering_fields = ['username', 'date_joined']
@@ -74,7 +76,27 @@ class UserViewSet(viewsets.ModelViewSet):
         return User.objects.all().only(
                 'id', 'username', 'email', 'first_name', 'last_name', 'date_joined', 'role'
             )
+    
+    # Delete user view for deleting user accounts
+class UserDeleteViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    http_method_names = ['delete']
+    lookup_field = 'id'
+    lookup_value_regex = '[0-9]+'
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        return User.objects.filter(id=user.id)
+
+    def delete_user(self, request, pk=None):
+        try:
+            user = self.get_object()
+            user.delete()
+            return Response({"message": "User account deleted successfully."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
 
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
@@ -89,9 +111,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         return Conversation.objects.filter(participants=user)
-    
-    def filter_queryset(self, queryset):
-        return super().filter_queryset(queryset)
     
     def perform_create(self, serializer):
         conversation = serializer.save(creator=self.request.user)
@@ -132,9 +151,6 @@ class MessageViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return Message.objects.filter(conversation__participants=user)
 
-    def filter_queryset(self, queryset):
-        return super().filter_queryset(queryset)
-
     def perform_create(self, serializer, request):
         # Ensure the user is a participant of the conversation
         try:
@@ -149,8 +165,6 @@ class MessageViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
-
-    # Optionally, add logic to notify participants of the new message
     @action(detail=True, methods=['post'])
     def send_message(self, request, conversation_id=None):
         serializer = MessageSerializer(data=request.data)
@@ -192,7 +206,47 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return Response({"message": f"{notifications.count()} notifications marked as read."}, status=status.HTTP_200_OK)
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+@method_decorator(cache_page(60*2), name='dispatch')  # Cache for 2 minutes
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+    lookup_field = 'message_id'
+    lookup_value_regex = '[0-9]+'
+    filterset_class = MessageFilter
+    pagination_class = CustomPagination
+    permission_classes = [IsParticipantOfConversation]
     
+    # Return only messages in conversations where the user is a participant
+    def get_queryset(self):
+        user = self.request.user
+        return Message.objects.select_related('receiver').prefetch_related('replies').filter(sender=self.request.user) | Message.objects.select_related('sender').prefetch_related('replies').filter(receiver=self.request.user)
+
+    def perform_create(self, serializer, request):
+        # Ensure the user is a participant of the conversation
+        try:
+            conversation_id = self.request.data.get('conversation_id')
+            conversation = Conversation.objects.get(conversation_id=conversation_id)
+            if request.user not in conversation.participants.all():
+                return Response({"error": "You are not a participant of this conversation."}, 
+                                status=status.HTTP_403_FORBIDDEN)
+            serializer.save(sender=request.user, conversation_id=conversation)
+        except Conversation.DoesNotExist:
+            return Response({"error": "Conversation does not exist."}, status=400)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+
+
+class MessageEditHistoryViewSet(viewsets.ModelViewSet):
+    queryset = MessageHistory.objects.all()
+    serializer_class = MessageHistorySerializer
+    http_method_names = ['get', 'post']
+    lookup_field = 'history_id'
+    lookup_value_regex = '[0-9]+'
+    pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsParticipantOfConversation])
     def edit_message(self, request, message_id=None):
         try:
@@ -231,21 +285,3 @@ class NotificationViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=400)
         
-
-# Delete user view for deleting user accounts
-class UserDeleteViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    http_method_names = ['delete']
-    lookup_field = 'id'
-    lookup_value_regex = '[0-9]+'
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return User.objects.filter(id=user.id)
-
-    def delete_user(self, request, pk=None):
-        user = self.get_object()
-        user.delete()
-        return Response({"message": "User account deleted successfully."}, status=status.HTTP_200_OK)

@@ -46,12 +46,20 @@ class Message(models.Model):
     edited = models.BooleanField(default=False)
     edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='edited_messages')
     parent_message = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    is_thread_starter = models.BooleanField(default=True)
     timestamp = models.DateTimeField(default=models.functions.Now())
 
     class Meta:
         ordering = ['-timestamp']
     def __str__(self):
         return f"Message from {self.sender.username} at {self.timestamp}"
+    
+    def save(self, *args, **kwargs):
+        if self.parent_message:
+            self.is_thread_starter = False
+        else:
+            self.is_thread_starter = True
+        super().save(*args, **kwargs)
     
 class MessageHistory(models.Model):
     # to keep track of message edits
