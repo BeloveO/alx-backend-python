@@ -7,6 +7,7 @@ from django.views.decorators.cache import cache_page
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import User, Conversation, Message, Notification, MessageHistory
+from .managers import UnreadMessagesManager
 from .pagination import CustomPagination
 from .permissions import IsParticipantOfConversation
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer, NotificationSerializer, MessageHistorySerializer
@@ -90,13 +91,21 @@ class UserDeleteViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return User.objects.filter(id=user.id)
 
-    def delete_user(self, request, pk=None):
-        try:
-            user = self.get_object()
-            user.delete()
-            return Response({"message": "User account deleted successfully."}, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"error": "User not found."}, status=404)
+@action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated])
+def delete_user(self, request, pk=None):
+    try:
+        user = self.get_object()
+        user.delete()
+        return Response({"message": "User account deleted successfully."}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
+    
+@action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+def get_unread_messages(self, request):
+    user = request.user
+    unread_messages = Message.unread.unread_messages(user)
+    serializer = MessageSerializer(unread_messages, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer

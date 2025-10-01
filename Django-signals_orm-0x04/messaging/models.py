@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractUser
+from .managers import UnreadMessagesManager
 
 # Create your models here.
 
@@ -47,6 +48,7 @@ class Message(models.Model):
     edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='edited_messages')
     parent_message = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     is_thread_starter = models.BooleanField(default=True)
+    is_read = models.BooleanField(default=False)
     timestamp = models.DateTimeField(default=models.functions.Now())
 
     class Meta:
@@ -60,6 +62,9 @@ class Message(models.Model):
         else:
             self.is_thread_starter = True
         super().save(*args, **kwargs)
+
+    objects = models.Manager()  # The default manager.
+    unread = UnreadMessagesManager()  # Custom manager for unread messages.
     
 class MessageHistory(models.Model):
     # to keep track of message edits
