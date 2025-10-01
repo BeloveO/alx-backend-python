@@ -41,7 +41,6 @@ class Message(models.Model):
     message_id = models.AutoField(primary_key=True, unique=True)
     conversation_id = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     sender_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    reciver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages', null=True, blank=True)
     message_body = models.TextField()
     sent_at = models.DateTimeField(default=models.functions.Now())
 
