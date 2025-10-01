@@ -159,5 +159,9 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+CACHES = {
+    'default': { 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'unique-snowflake', }
+}
 # Custom User Model
 AUTH_USER_MODEL = 'chats.User'

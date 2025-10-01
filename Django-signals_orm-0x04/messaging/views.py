@@ -216,7 +216,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-@method_decorator(cache_page(60*2), name='dispatch')  # Cache for 2 minutes
+@method_decorator(cache_page(60), name='dispatch')  # Cache for 2 minutes
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
