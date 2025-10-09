@@ -13,13 +13,16 @@ RUN apk update && apk add --no-cache \
     postgresql-dev \
     gcc \
     python3-dev \
+    mariadb-dev \
     musl-dev \
     libffi-dev \
     && rm -rf /var/cache/apk/*
 
+
 # Copy requirements file
 COPY requirements.txt .
 
+RUN pip install mysqlclient
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
