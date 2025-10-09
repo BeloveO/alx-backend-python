@@ -1,7 +1,10 @@
 services:
   web:
     build: .
-    command: gunicorn messaging_app.wsgi:application --bind 0.0.0.0:8000
+    command: 
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
     env_file:
       - .env
     volumes:
@@ -16,8 +19,8 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: messaging_app
-      MYSQL_USER: user
+      MYSQLDB: messaging_app
+      MYSQLUSER: user
       MYSQL_PASSWORD: password
     volumes:
       - db_data:/var/lib/mysql
