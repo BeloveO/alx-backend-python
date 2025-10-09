@@ -4,7 +4,7 @@ services:
     command: 
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+             python3 manage.py runserver 0.0.0.0:8000"
     env_file:
       - .env
     volumes:
@@ -19,8 +19,8 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQLDB: messaging_app
-      MYSQLUSER: user
+      MYSQL_DB: messaging_app
+      MYSQL_USER: user
       MYSQL_PASSWORD: password
     volumes:
       - db_data:/var/lib/mysql
