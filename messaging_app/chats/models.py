@@ -40,11 +40,12 @@ class Message(models.Model):
     # containing the sender, conversation as defined in the shared schema 
     message_id = models.AutoField(primary_key=True, unique=True)
     conversation_id = models.ForeignKey(Conversation, on_delete=models.CASCADE)
-    sender_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    message_body = models.TextField()
-    sent_at = models.DateTimeField(default=models.functions.Now())
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages', null=True, blank=True)
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=models.functions.Now())
 
     class Meta:
-        ordering = ['-sent_at']
+        ordering = ['-timestamp']
     def __str__(self):
-        return f"Message from {self.sender_id.username} at {self.sent_at}"
+        return f"Message from {self.sender.username} at {self.timestamp}"
