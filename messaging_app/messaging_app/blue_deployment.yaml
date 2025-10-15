@@ -4,15 +4,18 @@ metadata:
   name: messaging-app
   labels:
     app: messaging-app
+    version: blue
 spec:
   replicas: 3
   selector:
     matchLabels:
       app: messaging-app
+      version: blue
   template:
     metadata:
       labels:
         app: messaging-app
+        version: blue
     spec:
       containers:
       - name: messaging-app
@@ -38,8 +41,10 @@ metadata:
   name: messaging-app-service
 spec:
   type: ClusterIP
+
   selector:
     app: messaging-app
+    version: blue
   ports:
     - protocol: TCP
       port: 80
@@ -53,6 +58,7 @@ spec:
   type: ClusterIP
   selector:
     app: mysql
+    version: blue
   ports:
     - protocol: TCP
       port: 3306
@@ -64,6 +70,7 @@ metadata:
   name: mysql
   labels:
     app: mysql
+    version: blue
 spec:
   replicas: 1
   selector:
@@ -100,6 +107,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pv-claim
+  labels:
+    app: mysql
+    version: blue
 spec:
   accessModes:
     - ReadWriteOnce
