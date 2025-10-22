@@ -7,7 +7,7 @@ pipeline {
     
     environment {
         GITHUB_CREDENTIALS = credentials('github-credentials')
-        APP_DIR = 'messaging_app'
+        APP_DIR = 'messaging_app/messaging_app'
     }
     
     stages {
