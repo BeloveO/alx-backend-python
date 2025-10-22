@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    
+    tools {
+        python('python3')
+    }
+    
+    environment {
+        GITHUB_CREDENTIALS = credentials('github-credentials')
+        APP_DIR = 'messaging_app'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git(
+                    url: 'https://github.com/BeloveO/alx-backend-python.git',
+                    credentialsId: 'github-credentials',
+                    branch: 'main'
+                )
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                dir("${APP_DIR}") {
+                    sh 'python -m pip install --upgrade pip'
+                    sh 'pip install -r requirements.txt'
+                    sh 'pip install pytest pytest-html'
+                }
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                dir("${APP_DIR}") {
+                    sh 'pytest --junitxml=test-results.xml --html=test-report.html --self-contained-html'
+                }
+            }
+            post {
+                always {
+                    dir("${APP_DIR}") {
+                        junit 'test-results.xml'
+                        publishHTML(target: [
+                            reportName: 'Test Report',
+                            reportDir: '.',
+                            reportFiles: 'test-report.html',
+                            keepAll: true,
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true
+                        ])
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Pipeline completed - check test reports'
+        }
+        success {
+            echo 'All tests passed!'
+        }
+        failure {
+            echo 'Pipeline failed - check test results'
+        }
+    }
+}
